@@ -3,13 +3,13 @@ library(deSolve)
 
 
 
-M=2# No. of plant
-N=1 # No. of animal
+M=4# No. of plant
+N=2 # No. of animal
 
-{xP0=c(1.56827,1)
-  xA0=c(2.6836)
-  zP0=c(0.82854,1)+2
-  zA0=c(2.43836)+2
+{xP0=c(1.56827,1.15267,1,1.3)
+  xA0=c(2.6836,1.38599)
+  zP0=c(0.82854,1.23288,2,1.5)
+  zA0=c(2.43836,2.23784)+3
   xm=2
   ym=3
   sd_k=exp(-1)
@@ -18,30 +18,30 @@ N=1 # No. of animal
   #Maximum carrying capacity
   K=100
   # Trait elongation cost
-  lambdaP=0.02
-  lambdaA=0.05
+  lambdaP=0.08
+  lambdaA=0.08
   # Intrinsic growth rate
-  rP=c(0.767,0.5)
-  rA=c(0.3111)
+  rP=c(0.767,0.3717,0.5,0.8)
+  rA=c(0.3111,0.3437)
   # floral resource production rate
-  alpha=c(1,1)
+  alpha=c(1,1,2,1)
   #floral resource decay rate
-  w=c(1,1)
+  w=c(1,1,1,1)
 
   mu=0.01
   s=0.05
   # Benefit scaling parameter
-  c=3
+  c=1
   # Strength of assortative
   a=0.3
 
   #Initial foraging effort
   bet0<-matrix(1/M,M,N)
   #Initial density
-  XP0<-matrix(c(0.6761,0.3), nr=M)
-  XA0<-matrix(c(0.978), nr=N)
+  XP0<-matrix(c(0.6761,0.727,1,1), nr=M)
+  XA0<-matrix(c(0.978,0.1953), nr=N)
   #Animal adaptation rate
-  G=matrix(c(10))
+  G=matrix(c(10,20))
   #Initial densities
   X0=rbind(XP0,XA0)}
 
@@ -77,7 +77,7 @@ lotka<-function(t,y,parameters){
 
     dX<-(Xx[1:(M+N)]*rbind(dXP,dXA))
 
-    dbet<-((bet%*%diag((G)))*sweep((sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
+    dbet<-((bet%*%diag(c(G)))*sweep((sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
                                    colSums((bet*sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA))),"-"))
 
 
@@ -89,10 +89,10 @@ lotka<-function(t,y,parameters){
       ((c(alpha)*bet*(a*sigma_P^2*exp(-a*disMat)-lambdaP*exp(lambdaP*zP)))%*%XA)/(((bet*sigma_A)%*%XA)+w)
 
     # Selection gradient of animal competitive trait
-    gy=colSums((cA*(matrix((-(xA-ym)/sd_k^2),N,N,byrow = TRUE)+disMatA/sd_c^2))*(c((rA*XA/kA))))
+    gy=colSums((cA*(matrix((-(xA-ym)/sd_k^2),N,N,byrow = TRUE)+disMatA/sd_c^2))%*%diag(c((rA*XA/kA))))
 
     # Selection gradient of animal mutualistic trait
-    g_zj=colSums((((c(-alpha*XP)*(bet^2)*(sigma_A)*(a*sigma_A^2*exp(a*disMat)-matrix(lambdaA*exp(lambdaA*zA),M,N, byrow = TRUE)))*(c(XA)))/c(((bet*sigma_A)%*%XA)+w)^2)+
+    g_zj=colSums((((c(-alpha*XP)*(bet^2)*(sigma_A)*(a*sigma_A^2*exp(a*disMat)-matrix(lambdaA*exp(lambdaA*zA),M,N, byrow = TRUE)))%*%diag((c(XA))))/c(((bet*sigma_A)%*%XA)+w)^2)+
                    (c(alpha*XP)*bet*(a*(sigma_A^2)*exp(a*disMat)-matrix(lambdaA*exp(lambdaA*zA),M,N, byrow = TRUE)))/c(((bet*sigma_A)%*%XA)+w))
 
     dxP=0.5*mu*s^2*XP*gx
@@ -107,7 +107,7 @@ lotka<-function(t,y,parameters){
 
 {# Simulation of the model equation
   yini=c(c(X0),c(bet0),xP0,zP0,xA0,zA0)
-  times=seq(0,20000,1)
+  times=seq(0,50000,1)
   parameters=list(rP=rP,rA=rA,alpha=alpha,w=w, G=G,c=c, a=a)
   solution<-ode(y=yini, times=times, func=lotka, parms=parameters)}
 
@@ -178,8 +178,8 @@ layout(matrix(1:6, ncol = 2), widths = 1, heights = c(1,0.85,1), respect = FALSE
 tail(X,5)
 tail(x_trait,1)
 tail(zP_trait,1)
-y_trait[length(times),]
-zA_trait[length(times),]
+tail(y_trait,1)
+tail(zA_trait,1)
 
 
 matrix(tail(ForEffMatA,1),M,N)
@@ -274,13 +274,6 @@ plot(disMat,sigma_A,col=1:10)
   #conversion rate
   c=30
 
-  # kP=10*exp(-((xP0-xm)^2)/(2*(sd_k)^2))
-  # kA=10*exp(-((xA0-ym)^2)/(2*(sd_k)^2))
-  # disMatP=c(matrix(xP0,M,1))-matrix(xP0,M,M, byrow = T)
-  # disMatA=c(matrix(xA0,N,1))-matrix(xA0,N,N, byrow = T)
-  # disMat=c(matrix(zP0,M,1))-matrix(zA0,M,N, byrow = T)
-  # cP=exp(-(disMatP^2)/(2*(exp(-2))^2))
-  # cA=exp(-(disMatA^2)/(2*(exp(-2))^2))
 
   a=0.5
   #
