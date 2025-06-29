@@ -3,30 +3,30 @@ library(deSolve)
 
 
 
-M=4# No. of plant
-N=2 # No. of animal
-
-{xP0=c(1.56827,1.15267,1,1.3)
-  xA0=c(2.6836,1.38599)
-  zP0=c(0.82854,1.23288,2,1.5)
-  zA0=c(2.43836,2.23784)+3
+M=3# No. of plant
+N=3 # No. of animal
+set.seed(123)
+{xP0=runif(M,1,1.5)
+  xA0=runif(N,1,3.5)
+  zP0=runif(M,0.5,1.5)
+  zA0=runif(N,1,3.5)
   xm=2
   ym=3
   sd_k=exp(-1)
-  sd_c=exp(-2)
+  sd_c=exp(-5)
 
   #Maximum carrying capacity
-  K=100
+  K=10
   # Trait elongation cost
   lambdaP=0.08
   lambdaA=0.08
   # Intrinsic growth rate
-  rP=c(0.767,0.3717,0.5,0.8)
-  rA=c(0.3111,0.3437)
+  rP=matrix(runif(M,0,1), nr=M)
+  rA=matrix(runif(N,0,1), nr=N)
   # floral resource production rate
-  alpha=c(1,1,2,1)
+  alpha=1*matrix(runif(M,0,1), nr=M)
   #floral resource decay rate
-  w=c(1,1,1,1)
+  w=1*matrix(runif(M,0,1), nr=M)
 
   mu=0.01
   s=0.05
@@ -38,10 +38,10 @@ N=2 # No. of animal
   #Initial foraging effort
   bet0<-matrix(1/M,M,N)
   #Initial density
-  XP0<-matrix(c(0.6761,0.727,1,1), nr=M)
-  XA0<-matrix(c(0.978,0.1953), nr=N)
+  XP0<-matrix(runif(M,0,1), nr=M)
+  XA0<-matrix(runif(N,0,1), nr=N)
   #Animal adaptation rate
-  G=matrix(c(10,20))
+  G=5*matrix(runif(N,1,2), nr=N)
   #Initial densities
   X0=rbind(XP0,XA0)}
 
@@ -105,8 +105,8 @@ lotka<-function(t,y,parameters){
 }
 
 
-{# Simulation of the model equation
-  yini=c(c(X0),c(bet0),xP0,zP0,xA0,zA0)
+# Simulation of the model equation
+{ yini=c(c(X0),c(bet0),xP0,zP0,xA0,zA0)
   times=seq(0,50000,1)
   parameters=list(rP=rP,rA=rA,alpha=alpha,w=w, G=G,c=c, a=a)
   solution<-ode(y=yini, times=times, func=lotka, parms=parameters)}
@@ -122,7 +122,7 @@ lotka<-function(t,y,parameters){
   zA_trait<-as.matrix(solution[,(M*N+3*M+2*N+2):(M*N+3*M+3*N+1)])
 }
 
-tail(X,15)
+tail(X,5)
 layout(matrix(1:4, ncol = 2), widths = 1, heights = c(1,1), respect = FALSE)
 {
   par(mar = c(0.5, 4.5, 4.1, 2.0))
@@ -130,8 +130,6 @@ layout(matrix(1:4, ncol = 2), widths = 1, heights = c(1,1), respect = FALSE)
           main=NA,
           ylab = "Plant density", xlab = NA,xaxt="n",cex.lab=2.0,cex.axis=2.0)
   par(mar = c(4.1, 4.5, 1, 2.0))
-
-
 
   matplot(X[,(M+1):(M+N)], type = "l",lwd=2,lty = "solid" , pch=1,col = 1:N,
           main=NA, ylab = "Animal density", xlab = "Time",cex.lab=2.0,cex.axis=2.0)
@@ -274,13 +272,8 @@ plot(disMat,sigma_A,col=1:10)
   #conversion rate
   c=30
 
-
   a=0.5
-  #
-  #   sigma_P=c*((1/(1+exp(-a*disMat)))-(exp(0.005*zP0)-1))
-  #   sigma_A=c*((1/(1+exp(a*disMat)))-(exp(0.005*zA0)-1))
-  # sigma_P=c*exp(-(disMat^2)/(2*(exp(1))^2))
-  # sigma_A=c*exp(-(disMat^2)/(2*(exp(1))^2))
+
   #Initial foraging effort
   bet0<-matrix(1/M,M,N)
   # Initial floral resource abundance
