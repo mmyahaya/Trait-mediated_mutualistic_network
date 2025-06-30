@@ -3,9 +3,9 @@ library(deSolve)
 
 
 
-M=3# No. of plant
-N=3 # No. of animal
-set.seed(123)
+M=6# No. of plant
+N=5 # No. of animal
+#set.seed(123)
 {xP0=runif(M,1,1.5)
   xA0=runif(N,1,3.5)
   zP0=runif(M,0.5,1.5)
@@ -64,7 +64,7 @@ lotka<-function(t,y,parameters){
     disMatA=c(matrix(xA,N,1))-matrix(xA,N,N, byrow = T)
     disMat=c(matrix(zP,M,1))-matrix(zA,M,N, byrow = T)
     cP=1*exp(-(disMatP^2)/(2*(sd_c)^2))
-    cA=1*exp(-(disMatA^2)/(2*(sd_c)^2))
+    cA=.1*exp(-(disMatA^2)/(2*(sd_c)^2))
 
     sigma_P=c*((1/(1+exp(-a*disMat)))-(exp(lambdaP*zP)-1))
     sigma_A=c*((1/(1+exp(a*disMat)))-matrix((exp(lambdaA*zA)-1),M,N, byrow = TRUE))
@@ -110,7 +110,6 @@ lotka<-function(t,y,parameters){
   times=seq(0,50000,1)
   parameters=list(rP=rP,rA=rA,alpha=alpha,w=w, G=G,c=c, a=a)
   solution<-ode(y=yini, times=times, func=lotka, parms=parameters)}
-
 
 #Extraction of each state variables
 
