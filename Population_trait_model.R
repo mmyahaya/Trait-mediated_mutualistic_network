@@ -3,9 +3,9 @@ library(deSolve)
 
 
 
-M=6# No. of plant
-N=5 # No. of animal
-#set.seed(123)
+M=3# No. of plant
+N=3 # No. of animal
+set.seed(123)
 {xP0=runif(M,1,1.5)
   xA0=runif(N,1,3.5)
   zP0=runif(M,0.5,1.5)
@@ -41,7 +41,7 @@ N=5 # No. of animal
   XP0<-matrix(runif(M,0,1), nr=M)
   XA0<-matrix(runif(N,0,1), nr=N)
   #Animal adaptation rate
-  G=5*matrix(runif(N,1,2), nr=N)
+  G=5*matrix(runif(N,1,1), nr=N)
   #Initial densities
   X0=rbind(XP0,XA0)}
 
@@ -64,7 +64,7 @@ lotka<-function(t,y,parameters){
     disMatA=c(matrix(xA,N,1))-matrix(xA,N,N, byrow = T)
     disMat=c(matrix(zP,M,1))-matrix(zA,M,N, byrow = T)
     cP=1*exp(-(disMatP^2)/(2*(sd_c)^2))
-    cA=.1*exp(-(disMatA^2)/(2*(sd_c)^2))
+    cA=1*exp(-(disMatA^2)/(2*(sd_c)^2))
 
     sigma_P=c*((1/(1+exp(-a*disMat)))-(exp(lambdaP*zP)-1))
     sigma_A=c*((1/(1+exp(a*disMat)))-matrix((exp(lambdaA*zA)-1),M,N, byrow = TRUE))
@@ -125,6 +125,7 @@ tail(X,5)
 layout(matrix(1:4, ncol = 2), widths = 1, heights = c(1,1), respect = FALSE)
 {
   par(mar = c(0.5, 4.5, 4.1, 2.0))
+
   matplot(X[,1:M], type = "l",lwd=2,lty = "solid" , pch = 1, col=1:M,
           main=NA,
           ylab = "Plant density", xlab = NA,xaxt="n",cex.lab=2.0,cex.axis=2.0)
@@ -138,13 +139,22 @@ layout(matrix(1:4, ncol = 2), widths = 1, heights = c(1,1), respect = FALSE)
   matplot(ForEffMatA, type = "l", lwd=2,lty ="solid" ,pch = 1, col = rep(1:N, each=M),
           main=NA ,ylab = "Foraging effort ",xlab="Time",
           cex.lab=2.0,cex.axis=2.0)
-  #bipartite::plotweb(matrix(ForEffMatA[length(times),],M,N),method='normal')
+
+  net<-matrix(tail(ForEffMatA,1),M,N)*(tail(X,1)[1:M]%*%t(tail(X,1)[(M+1):(M+N)]))
+  net[net<0.00001]<-0
+  bipartite::plotweb(net,method='normal')
+
 }
 
-layout(matrix(1:6, ncol = 2), widths = 1, heights = c(1,0.85,1), respect = FALSE)
+layout(matrix(1:8, ncol = 2), widths = 1, heights = c(1,0.85,1), respect = FALSE)
 
 {
   par(mar = c(0.5, 4.5, 4.1, 2.0))
+
+  matplot(ForEffMatA, type = "l", lwd=2,lty ="solid" ,pch = 1, col = rep(1:N, each=M),
+          main=NA ,ylab = "Foraging effort ",xlab=NULL,xaxt="n",
+          cex.lab=2.0,cex.axis=2.0)
+  par(mar = c(0.5, 4.5, 1, 2.0))
   matplot(X[,1:M], type = "l",lwd=2,lty = "solid" , pch = 1, col=1:M,
           main=NA,
           ylab = "Plant density", xlab = NA,xaxt="n",cex.lab=2.0,cex.axis=2.0)
@@ -157,7 +167,10 @@ layout(matrix(1:6, ncol = 2), widths = 1, heights = c(1,0.85,1), respect = FALSE
   matplot(zP_trait, lwd=2, type = "l",lty = "solid" , pch = 1, col=1:M,
           main=NA, ylab = "zP trait", xlab ="Time", cex.lab=2.0,cex.axis=2.0)
 
-  par(mar = c(0.5, 4.5, 4.1, 2.0))
+  net<-matrix(tail(ForEffMatA,1),M,N)*(tail(X,1)[1:M]%*%t(tail(X,1)[(M+1):(M+N)]))
+  net[net<0.00001]<-0
+  bipartite::plotweb(net,method='normal')
+  par(mar = c(0.5, 4.5, 1, 2.0))
   matplot(X[,(M+1):(M+N)], type = "l",lwd=2,lty = "solid" , pch=1,col = 1:N,
           main=NA, ylab = "Animal density", xlab = NA,xaxt="n",cex.lab=2.0,cex.axis=2.0)
 
@@ -172,6 +185,7 @@ layout(matrix(1:6, ncol = 2), widths = 1, heights = c(1,0.85,1), respect = FALSE
 }
 
 
+
 tail(X,5)
 tail(x_trait,1)
 tail(zP_trait,1)
@@ -181,7 +195,10 @@ tail(zA_trait,1)
 
 matrix(tail(ForEffMatA,1),M,N)
 
-dev.copy(jpeg,"Densities2.jpeg",width = 300, height = 150,units = "mm", res = 400)
+kP=K*exp(-((tail(x_trait,1)-xm)^2)/(2*(sd_k)^2))
+kA=K*exp(-((xA-ym)^2)/(2*(sd_k)^2))
+
+dev.copy(jpeg,"trait_mediated.jpeg",width = 300, height = 300,units = "mm", res = 400)
 
 dev.off()
 
