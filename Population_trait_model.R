@@ -1,15 +1,22 @@
 # Packages required for ODE and network metrics
 library(deSolve)
 
+Urand<-function(mu_y,var_y,m,n){
+  a<-mu_y
+  b<-sqrt((3*var_y)/(mu_y**2))
 
-
-M=3# No. of plant
-N=3 # No. of animal
-set.seed(123)
-{xP0=runif(M,1,1.5)
-  xA0=runif(N,1,3.5)
-  zP0=runif(M,0.5,1.5)
-  zA0=runif(N,1,3.5)
+  Urand<-a*(1+b*(2*matrix(runif(m*n,0,1),m,n)-1))
+  return(Urand)
+}
+varP<-0.1
+varA<-0.01
+M=5# No. of plant
+N=5 # No. of animal
+#set.seed(123)
+{xP0=c(Urand(1,varP,M,1))
+  xA0=c(Urand(2,varA,N,1))
+  zP0=c(Urand(1,varP,M,1))
+  zA0=c(Urand(2,varA,N,1))
   xm=2
   ym=3
   sd_k=exp(-1)
@@ -21,25 +28,25 @@ set.seed(123)
   lambdaP=0.08
   lambdaA=0.08
   # Intrinsic growth rate
-  rP=matrix(runif(M,0,1), nr=M)
-  rA=matrix(runif(N,0,1), nr=N)
+  rP=Urand(1,varP,M,1)
+  rA=Urand(1,varA,N,1)
   # floral resource production rate
-  alpha=1*matrix(runif(M,0,1), nr=M)
+  alpha=10*Urand(1,varP,M,1)
   #floral resource decay rate
-  w=1*matrix(runif(M,0,1), nr=M)
+  w=10*Urand(1,varP,M,1)
 
   mu=0.01
   s=0.05
   # Benefit scaling parameter
   c=1
   # Strength of assortative
-  a=0.3
+  a=0.03
 
   #Initial foraging effort
   bet0<-matrix(1/M,M,N)
   #Initial density
-  XP0<-matrix(runif(M,0,1), nr=M)
-  XA0<-matrix(runif(N,0,1), nr=N)
+  XP0<-Urand(1,varP,M,1)
+  XA0<-Urand(1,varA,N,1)
   #Animal adaptation rate
   G=5*matrix(runif(N,1,1), nr=N)
   #Initial densities
@@ -107,7 +114,7 @@ lotka<-function(t,y,parameters){
 
 # Simulation of the model equation
 { yini=c(c(X0),c(bet0),xP0,zP0,xA0,zA0)
-  times=seq(0,50000,1)
+  times=seq(0,20000,1)
   parameters=list(rP=rP,rA=rA,alpha=alpha,w=w, G=G,c=c, a=a)
   solution<-ode(y=yini, times=times, func=lotka, parms=parameters)}
 
@@ -122,29 +129,6 @@ lotka<-function(t,y,parameters){
 }
 
 tail(X,5)
-layout(matrix(1:4, ncol = 2), widths = 1, heights = c(1,1), respect = FALSE)
-{
-  par(mar = c(0.5, 4.5, 4.1, 2.0))
-
-  matplot(X[,1:M], type = "l",lwd=2,lty = "solid" , pch = 1, col=1:M,
-          main=NA,
-          ylab = "Plant density", xlab = NA,xaxt="n",cex.lab=2.0,cex.axis=2.0)
-  par(mar = c(4.1, 4.5, 1, 2.0))
-
-  matplot(X[,(M+1):(M+N)], type = "l",lwd=2,lty = "solid" , pch=1,col = 1:N,
-          main=NA, ylab = "Animal density", xlab = "Time",cex.lab=2.0,cex.axis=2.0)
-
-  par(mar = c(0.5, 4.5, 4.1, 2.0))
-
-  matplot(ForEffMatA, type = "l", lwd=2,lty ="solid" ,pch = 1, col = rep(1:N, each=M),
-          main=NA ,ylab = "Foraging effort ",xlab="Time",
-          cex.lab=2.0,cex.axis=2.0)
-
-  net<-matrix(tail(ForEffMatA,1),M,N)*(tail(X,1)[1:M]%*%t(tail(X,1)[(M+1):(M+N)]))
-  net[net<0.00001]<-0
-  bipartite::plotweb(net,method='normal')
-
-}
 
 layout(matrix(1:8, ncol = 2), widths = 1, heights = c(1,0.85,1), respect = FALSE)
 
@@ -195,8 +179,7 @@ tail(zA_trait,1)
 
 matrix(tail(ForEffMatA,1),M,N)
 
-kP=K*exp(-((tail(x_trait,1)-xm)^2)/(2*(sd_k)^2))
-kA=K*exp(-((xA-ym)^2)/(2*(sd_k)^2))
+net
 
 dev.copy(jpeg,"trait_mediated.jpeg",width = 300, height = 300,units = "mm", res = 400)
 
