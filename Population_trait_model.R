@@ -10,13 +10,13 @@ Urand<-function(mu_y,var_y,m,n){
 }
 varP<-0.1
 varA<-0.01
-M=5# No. of plant
-N=5 # No. of animal
+M=3# No. of plant
+N=1# No. of animal
 #set.seed(123)
-{xP0=c(Urand(1,varP,M,1))
-  xA0=c(Urand(2,varA,N,1))
-  zP0=c(Urand(1,varP,M,1))
-  zA0=c(Urand(2,varA,N,1))
+{xP0=runif(M,1,1.5)
+  xA0=runif(N,1,3.5)
+  zP0=runif(M,0.5,1.5)
+  zA0=runif(N,1,3.5)
   xm=2
   ym=3
   sd_k=exp(-1)
@@ -28,27 +28,27 @@ N=5 # No. of animal
   lambdaP=0.08
   lambdaA=0.08
   # Intrinsic growth rate
-  rP=Urand(1,varP,M,1)
-  rA=Urand(1,varA,N,1)
+  rP=matrix(runif(M,0,1), nr=M)
+  rA=matrix(runif(N,0,1), nr=N)
   # floral resource production rate
-  alpha=10*Urand(1,varP,M,1)
+  alpha=1*matrix(runif(M,0,1), nr=M)
   #floral resource decay rate
-  w=10*Urand(1,varP,M,1)
+  w=1*matrix(runif(M,0,1), nr=M)
 
-  mu=0.01
-  s=0.05
+  mu=0.1
+  s=0.5
   # Benefit scaling parameter
   c=1
   # Strength of assortative
-  a=0.03
+  a=0.3
 
   #Initial foraging effort
   bet0<-matrix(1/M,M,N)
   #Initial density
-  XP0<-Urand(1,varP,M,1)
-  XA0<-Urand(1,varA,N,1)
+  XP0<-matrix(runif(M,0,1), nr=M)
+  XA0<-matrix(runif(N,0,1), nr=N)
   #Animal adaptation rate
-  G=5*matrix(runif(N,1,1), nr=N)
+  G=20*runif(N,1,2)
   #Initial densities
   X0=rbind(XP0,XA0)}
 
@@ -71,7 +71,7 @@ lotka<-function(t,y,parameters){
     disMatA=c(matrix(xA,N,1))-matrix(xA,N,N, byrow = T)
     disMat=c(matrix(zP,M,1))-matrix(zA,M,N, byrow = T)
     cP=1*exp(-(disMatP^2)/(2*(sd_c)^2))
-    cA=1*exp(-(disMatA^2)/(2*(sd_c)^2))
+    cA=.1*exp(-(disMatA^2)/(2*(sd_c)^2))
 
     sigma_P=c*((1/(1+exp(-a*disMat)))-(exp(lambdaP*zP)-1))
     sigma_A=c*((1/(1+exp(a*disMat)))-matrix((exp(lambdaA*zA)-1),M,N, byrow = TRUE))
@@ -84,8 +84,8 @@ lotka<-function(t,y,parameters){
 
     dX<-(Xx[1:(M+N)]*rbind(dXP,dXA))
 
-    dbet<-((bet%*%diag(c(G)))*sweep((sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
-                                   colSums((bet*sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA))),"-"))
+    dbet<-((bet%*%diag(G,ncol = N))*sweep((sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA)),2,
+                                    colSums((bet*sigma_A*c(alpha)*c(XP))/c(w+((sigma_A*bet)%*%XA))),"-"))
 
 
     #  Selection gradient of plant competitive trait
@@ -96,10 +96,12 @@ lotka<-function(t,y,parameters){
       ((c(alpha)*bet*(a*sigma_P^2*exp(-a*disMat)-lambdaP*exp(lambdaP*zP)))%*%XA)/(((bet*sigma_A)%*%XA)+w)
 
     # Selection gradient of animal competitive trait
-    gy=colSums((cA*(matrix((-(xA-ym)/sd_k^2),N,N,byrow = TRUE)+disMatA/sd_c^2))%*%diag(c((rA*XA/kA))))
+    gy=colSums((cA*(matrix((-(xA-ym)/sd_k^2),N,N,byrow = TRUE)+disMatA/sd_c^2))%*%diag(c((rA*XA/kA)),ncol = N))
 
     # Selection gradient of animal mutualistic trait
-    g_zj=colSums((((c(-alpha*XP)*(bet^2)*(sigma_A)*(a*sigma_A^2*exp(a*disMat)-matrix(lambdaA*exp(lambdaA*zA),M,N, byrow = TRUE)))%*%diag((c(XA))))/c(((bet*sigma_A)%*%XA)+w)^2)+
+    #g_zj=colSums((c(alpha*XP)*bet*(a*(sigma_A^2)*exp(a*disMat)-matrix(lambdaA*exp(lambdaA*zA),M,N, byrow = TRUE)))/c(((bet*sigma_A)%*%XA)+w))
+
+    g_zj=colSums((((c(-alpha*XP)*(bet^2)*(sigma_A)*(a*sigma_A^2*exp(a*disMat)-matrix(lambdaA*exp(lambdaA*zA),M,N, byrow = TRUE)))%*%diag(XA,ncol = N))/c(((bet*sigma_A)%*%XA)+w)^2)+
                    (c(alpha*XP)*bet*(a*(sigma_A^2)*exp(a*disMat)-matrix(lambdaA*exp(lambdaA*zA),M,N, byrow = TRUE)))/c(((bet*sigma_A)%*%XA)+w))
 
     dxP=0.5*mu*s^2*XP*gx
@@ -113,10 +115,10 @@ lotka<-function(t,y,parameters){
 
 
 # Simulation of the model equation
-{ yini=c(c(X0),c(bet0),xP0,zP0,xA0,zA0)
-  times=seq(0,20000,1)
-  parameters=list(rP=rP,rA=rA,alpha=alpha,w=w, G=G,c=c, a=a)
-  solution<-ode(y=yini, times=times, func=lotka, parms=parameters)}
+{yini=c(c(X0),c(bet0),xP0,zP0,xA0,zA0)
+times=seq(0,50000,1)
+parameters=list(rP=rP,rA=rA,alpha=alpha,w=w, G=G,c=c, a=a)
+solution<-ode(y=yini, times=times, func=lotka, parms=parameters)}
 
 #Extraction of each state variables
 
